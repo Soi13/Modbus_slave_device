@@ -15,6 +15,7 @@
 #define WIFI_PASS ""
 
 #define MB_PORT 502
+#define MB_SLAVE_ADDR 1
 #define MB_REG_COUNT 10
 #define TAG "MODBUS_SLAVE"
 
@@ -56,8 +57,21 @@ void app_main(void)
     // Modbus TCP Slave interface
     void *slave_interface = NULL;
 
+    mb_communication_info_t tcp_slave_config = {
+        .tcp_opts.port = MB_PORT,                // communication port number for Modbus slave
+        .tcp_opts.mode = MB_TCP,                            // mode of communication for slave
+        .tcp_opts.addr_type = MB_IPV4,                      // type of addressing being used
+        .tcp_opts.ip_addr_table = NULL,                     // Bind to any address
+        .tcp_opts.ip_netif_ptr = (void*)get_example_netif(),// the pointer to netif inteface
+        .tcp_opts.uid = MB_SLAVE_ADDR                       // Modbus slave Unit Identifier
+    };
+
     // Initialize TCP slave
-    ESP_ERROR_CHECK(mbc_slave_init_iface(&slave_interface));
+    esp_err_t err = mbc_slave_create_tcp(&tcp_slave_config, &slave_interface);
+
+    if (slave_interface == NULL || err != ESP_OK) {
+        ESP_LOGE(TAG, "Modbus controller initialization fail.");
+    }
 
     // Allocate holding registers
     uint16_t holding_regs[MB_REG_COUNT] = {0};
