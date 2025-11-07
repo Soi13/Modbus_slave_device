@@ -1,0 +1,20 @@
+Command:   ./modpoll -m tcp -r 1 -c 2 192.168.1.134
+
+The result will be something like:
+----------------------------------
+-- Polling slave... (Ctrl-C to stop)
+[1]: 220
+[2]: 550
+-- Polling slave... (Ctrl-C to stop)
+[1]: 220
+[2]: 550
+-- Polling slave... (Ctrl-C to stop)
+[1]: 220
+[2]: 550
+-- Polling slave... (Ctrl-C to stop)
+[1]: 220
+[2]: 550
+-- Polling slave... (Ctrl-C to stop)
+[1]: 220
+[2]: 550
+
