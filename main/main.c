@@ -10,10 +10,12 @@
 #include "freertos/task.h"
 #include "esp_modbus_common.h"
 #include "esp_modbus_slave.h"
+#include "mqtt_client.h"
 
 #define WIFI_SSID "Soi13"
 #define WIFI_PASS ""
 
+//Some variables regarding Modbus logic
 #define MB_PORT 502
 #define MB_SLAVE_ADDR 1
 #define MB_REG_COUNT 10
@@ -26,25 +28,31 @@ enum {
     MB_REG_MAX
 };
 
-void print_ip_info(void)
-{
-    esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
-    if (netif == NULL) {
-        ESP_LOGE(TAG, "Failed to get network interface handle");
-        return;
-    }
+//MQTT Server/Broker credentials
+#define MQTT_BROKER_URI "mqtt://192.168.1.64"
+#define MQTT_USER "mqtt_user"
+#define MQTT_PASSWORD ""
+#define FILTER_PRESSURE_DIFF "homeassistant/sensor/pressure"
 
-    esp_netif_ip_info_t ip_info;
-    if (esp_netif_get_ip_info(netif, &ip_info) == ESP_OK) {
+//Wifi event handler for displaying parameters of connection
+static void event_handler(void* arg, esp_event_base_t event_base,
+                          int32_t event_id, void* event_data)
+{
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+        esp_wifi_connect();
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        ESP_LOGW(TAG, "Wi-Fi disconnected, retrying...");
+        esp_wifi_connect();
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
         ESP_LOGI(TAG, "Wi-Fi connected");
-        ESP_LOGI(TAG, "IP Address: " IPSTR, IP2STR(&ip_info.ip));
-        ESP_LOGI(TAG, "Subnet Mask: " IPSTR, IP2STR(&ip_info.netmask));
-        ESP_LOGI(TAG, "Gateway: " IPSTR, IP2STR(&ip_info.gw));
-    } else {
-        ESP_LOGE(TAG, "Failed to get IP info");
+        ESP_LOGI(TAG, "IP Address: " IPSTR, IP2STR(&event->ip_info.ip));
+        ESP_LOGI(TAG, "Subnet Mask: " IPSTR, IP2STR(&event->ip_info.netmask));
+        ESP_LOGI(TAG, "Gateway: " IPSTR, IP2STR(&event->ip_info.gw));
     }
 }
 
+//Initializing Wifi connection
 static void wifi_init(void)
 {
     esp_netif_init();
@@ -54,27 +62,42 @@ static void wifi_init(void)
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     esp_wifi_init(&cfg);
 
+    esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL);
+    esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL);
+
     wifi_config_t wifi_config = {
         .sta = {
             .ssid = WIFI_SSID,
-            .password = WIFI_PASS
-        }
+            .password = WIFI_PASS,
+            .threshold.authmode = WIFI_AUTH_WPA2_PSK,
+        },
     };
 
     esp_wifi_set_mode(WIFI_MODE_STA);
     esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
     esp_wifi_start();
-    esp_wifi_connect();
+}
 
-    //ESP_LOGI(TAG, "Wi-Fi started, connecting to %s...", WIFI_SSID);
-    //vTaskDelay(pdMS_TO_TICKS(5000));
-    print_ip_info();
+static esp_mqtt_client_handle_t client = NULL;
+
+static void mqtt_app(void)
+{
+    esp_mqtt_client_config_t mqtt_cfg = {
+        .broker.address.uri = MQTT_BROKER_URI,
+        .credentials.username = MQTT_USER,
+        .credentials.authentication.password = MQTT_PASSWORD,
+    };
+
+    client = esp_mqtt_client_init(&mqtt_cfg);
+    esp_mqtt_client_start(client);
 }
 
 void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
     wifi_init();
+    vTaskDelay(pdMS_TO_TICKS(5000)); //Delay 5 seconds before starting MQTT connection, otherwise if run right after method wifi_init(); it can't connect since wifi doesn't have enough time to establish connection.
+    mqtt_app();
 
     // Modbus TCP Slave interface
     void *slave_interface = NULL;
@@ -125,6 +148,12 @@ void app_main(void)
         ESP_LOGI("MODBUS", "Updated registers: Temp=%.1f Hum=%.1f",
                  holding_regs[0] / 10.0,
                  holding_regs[1] / 10.0);
+
+        char pressure[16];
+        snprintf(pressure, sizeof(pressure), "%d", holding_regs[0]);
+
+        // Publish to Home Assistant topics
+        esp_mqtt_client_publish(client, FILTER_PRESSURE_DIFF, pressure, 0, 1, 0);
 
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
