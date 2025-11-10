@@ -69,4 +69,40 @@ Publishes real-time pressure values to a Home Assistant MQTT broker:<br/>
   <li>Automatically reconnects if connection drops</li>
   <li>MQTT starts only after Wi-Fi IP assignment</li>
 </ul>
-<hr/>
+<hr/><br/>
+
+<h2>🧰 Hardware Requirements</h2>
+<ul>
+  <li><b>ESP32</b> development board</li>
+  <li><b>Sensirion SDP810-500PA</b> differential pressure sensor</li>
+  <li>3.3V power supply</li>
+  <li>HVAC duct with two pressure sampling points</li>
+  <li>Tubing for connecting sensor ports</li>
+</ul><br/>
+
+<h3>Wiring (ESP32 → SDP810-500)</h3>
+<table>
+<tr>
+  <th>ESP32 Pin</th>	<th>SDP810 Pin</th>	<th>Description</th>
+</tr>
+<tr>
+  <td>3.3V</td>
+  <td>VDD</td>
+  <td>Power</td>
+</tr>
+<tr>
+  <td>GND</td>
+  <td>GND</td>
+  <td>Ground</td>
+</tr>
+<tr>
+  <td>GPIO21</td>
+  <td>SDA</td>
+  <td>I²C Data</td>
+</tr>
+<tr>
+  <td>GPIO22</td>
+  <td>SCL</td>
+  <td>I²C Clock</td>
+</tr>
+</table><hr/>
