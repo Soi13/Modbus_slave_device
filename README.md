@@ -20,3 +20,53 @@ The ESP32 works as:
 </ul>
 
 You can test Modbus functionality using <b>Modpoll</b> or any Modbus TCP client.
+<hr><br/>
+
+<h2>🛠 Features</h2>
+<h3>✅ Differential Pressure Monitoring</h3>
+<ul>
+  <li>Uses <b>SDP810-500</b> for accurate low-range differential pressure readings</li>
+  <li>Calculates pressure difference and outputs values in Pascals</li>
+  <li>Includes CRC validation according to Sensirion protocol</li>
+</ul>
+
+<h3>✅ Modbus TCP Slave</h3>
+<ul>
+  <li>Slave address: 1</li>
+  <li>Default port: 502</li>
+  <li>Exposes holding registers containing sensor data</li>
+  <li>Pollable from software like Modpoll, PLCs, BAS controllers, etc.</li>
+</ul><br/>
+
+<b>Registers map:</b>
+<table>
+  <tr>
+    <th>Register</th>
+    <th>Meaning</th>
+    <th>Notes</th>
+  </tr>
+  <tr>
+    <td>40001 (index 0)</td>
+    <td>Differential Pressure (Pa)</td>
+    <td>raw_dp/60 scaling</td>
+  </tr>
+  <tr>
+    <td>40002 (index 1)</td>
+    <td>Temperature (°C)</td>
+    <td>raw_temp/200 scaling</td>
+  </tr>
+</table><br/>
+
+<h3>✅ MQTT Publishing</h3>
+
+Publishes real-time pressure values to a Home Assistant MQTT broker:<br/>
+<b>Topic:</b>
+<code>homeassistant/sensor/pressure</code>
+
+<h3>✅ Wi-Fi Support</h3>
+<ul>
+  <li>Connects to local network</li>
+  <li>Automatically reconnects if connection drops</li>
+  <li>MQTT starts only after Wi-Fi IP assignment</li>
+</ul>
+<hr/>
