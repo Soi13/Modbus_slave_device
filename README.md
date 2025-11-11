@@ -105,4 +105,33 @@ Publishes real-time pressure values to a Home Assistant MQTT broker:<br/>
   <td>SCL</td>
   <td>I²C Clock</td>
 </tr>
-</table><hr/>
+</table><hr/><br/>
+
+<h2>🔧 Software & Libraries</h2>
+This project is written fully in <b>ESP-IDF</b>, using the following components:
+<ul>
+  <li><code>esp_wifi</code> — Wi-Fi STA mode</li>
+  <li><code>esp_event, esp_netif</code></li>
+  <li><code>esp_modbus_slave</code> — official ESP-IDF Modbus controller</li>
+  <li><code>esp_mqtt_client</code> — MQTT client</li>
+  <li><code>driver/i2c.h</code> — I²C driver for the SDP810 sensor</li>
+  <li>CRC8 implementation (Sensirion polynomial 0x31)</li>
+</ul><hr><br/>
+
+<h2>📡 Data Flow</h2>
+<h3>1. Sensor Acquisition</h3>
+ESP32 sends <b>continuous measurement command</b> to SDP810 using I²C.<br/>
+Data is read every 2 seconds and validated with CRC checks.
+
+<h3>2. Modbus Publishing</h3>
+Converted measurements are stored in the holding registers array.<br/>
+Modbus controllers poll the registers over TCP.<br/>
+
+<h3>3. MQTT Publishing</h3>
+Pressure value is formatted as a string and sent to the MQTT broker.<br/>
+Compatible with Home Assistant auto-discovery.<hr><br/>
+
+<h2>🧪 Testing Modbus with Modpoll</h2>
+Example command:<br/><br/>
+<code>modpoll -m tcp -t 4:int -r 1 -c 2 192.168.x.x</code><br/><br/>
+This reads registers 40001–40002 from the ESP32.<hr><br/>
