@@ -135,3 +135,17 @@ Compatible with Home Assistant auto-discovery.<hr><br/>
 Example command:<br/><br/>
 <code>modpoll -m tcp -t 4:int -r 1 -c 2 192.168.x.x</code><br/><br/>
 This reads registers 40001–40002 from the ESP32.<hr><br/>
+
+<h2>▶️ How It Works in HVAC Systems</h2>
+<ol>
+  <li><b>Pressure tube A</b> connects to duct <b>before</b> the filter</li>
+  <li><b>Pressure tube B</b> connects to duct <b>after</b> the filter</li>
+  <li>Clean filter → low pressure difference</li>
+  <li>Dirty filter → ΔP rises significantly</li>
+  <li>ESP32 reads ΔP and makes it available to:</li>
+  <ul>
+    <li>Home Assistant</li>
+    <li>Any Modbus poller</li>
+  </ul>
+  <li>Automations can notify you when ΔP exceeds thresholds</li>
+</ol>
