@@ -22,6 +22,12 @@ The ESP32 works as:
 You can test Modbus functionality using <b>Modpoll</b> or any Modbus TCP client.
 <hr><br/>
 
+<h2>Circuit</h2>
+
+![Picture of schema](circuit.png)
+
+<hr><br/>
+
 <h2>🛠 Features</h2>
 <h3>✅ Differential Pressure Monitoring</h3>
 <ul>
