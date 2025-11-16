@@ -28,6 +28,7 @@
 #define MQTT_USER "mqtt_user"
 #define MQTT_PASSWORD ""
 #define FILTER_PRESSURE_DIFF "homeassistant/sensor/pressure"
+#define FILTER_AREA_AIR_TEMPERATURE "homeassistant/sensor/filter_area_temperature"
 
 // Defining I2C parameters for SDP810-500
 #define I2C_MASTER_SCL_IO           22
@@ -231,10 +232,13 @@ void app_main(void)
                      holding_regs[0], holding_regs[1], raw_dp, raw_temp);
 
             char pressure[16];
+            char temperature[16];
             snprintf(pressure, sizeof(pressure), "%d", holding_regs[0]);
+            snprintf(temperature, sizeof(temperature), "%d", holding_regs[1]);
 
             // Publish to Home Assistant topics
             esp_mqtt_client_publish(client, FILTER_PRESSURE_DIFF, pressure, 0, 1, 0);
+            esp_mqtt_client_publish(client, FILTER_AREA_AIR_TEMPERATURE, temperature, 0, 1, 0);
         } else if (err == ESP_ERR_INVALID_CRC) {
             ESP_LOGW(TAG, "CRC error");
         } else {
