@@ -40,6 +40,9 @@
 #define SDP810_ADDR                 0x25 // Address of pressure sensor SDP810-500
 #define CMD_CONT_MEAS_AVG           0x3615   // Continuous diff pressure, averaged
 
+// Allocate holding registers
+static uint16_t holding_regs[MB_REG_COUNT] = {0};
+
 // Wifi event handler for displaying parameters of connection
 static void event_handler(void* arg, esp_event_base_t event_base,
                           int32_t event_id, void* event_data)
@@ -163,6 +166,59 @@ void i2c_master_init() {
     ESP_ERROR_CHECK(i2c_driver_install(I2C_MASTER_PORT, conf.mode, 0, 0, 0));
 }
 
+void sensor_mqtt_task(void *arg)
+{
+    while(1) {
+        int16_t raw_dp = 0;
+        int16_t raw_temp = 0;
+
+        esp_err_t err = sdp_read_measurement(&raw_dp, &raw_temp);
+
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "DP = %d Pa, T = %d °C (raw dp=%d, temp=%d)",
+                     raw_dp / 60, raw_temp / 200, raw_dp, raw_temp);
+
+            char pressure[16];
+            char temperature[16];
+            snprintf(pressure, sizeof(pressure), "%d", raw_dp / 60);
+            snprintf(temperature, sizeof(temperature), "%d", raw_temp / 200);
+
+            // Publish to Home Assistant topics
+            esp_mqtt_client_publish(client, FILTER_PRESSURE_DIFF, pressure, 0, 1, 0);
+            esp_mqtt_client_publish(client, FILTER_AREA_AIR_TEMPERATURE, temperature, 0, 1, 0);
+        } else if (err == ESP_ERR_INVALID_CRC) {
+            ESP_LOGW(TAG, "CRC error");
+        } else {
+            ESP_LOGE(TAG, "I2C read error: %s", esp_err_to_name(err));
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+}
+
+void modbus_task(void *arg)
+{
+    while(1) {
+        int16_t mb_raw_dp = 0;
+        int16_t mb_raw_temp = 0;
+
+        esp_err_t err = sdp_read_measurement(&mb_raw_dp, &mb_raw_temp);
+
+        if (err == ESP_OK) {
+            holding_regs[0] = mb_raw_dp / 60;
+            holding_regs[1] = mb_raw_temp / 200;
+            ESP_LOGI(TAG, "DP = %d Pa, T = %d °C (raw dp=%d, temp=%d)",
+                     mb_raw_dp / 60, mb_raw_temp / 200, mb_raw_dp, mb_raw_temp);
+        } else if (err == ESP_ERR_INVALID_CRC) {
+            ESP_LOGW(TAG, "CRC error");
+        } else {
+            ESP_LOGE(TAG, "I2C read error: %s", esp_err_to_name(err));
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10)); 
+    }
+}
+
 void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
@@ -201,9 +257,6 @@ void app_main(void)
         ESP_LOGE(TAG, "Modbus controller initialization fail.");
     }
 
-    // Allocate holding registers
-    uint16_t holding_regs[MB_REG_COUNT] = {0};
-
     mb_register_area_descriptor_t holding_area = {
         .type = MB_PARAM_HOLDING,
         .start_offset = 0,                // Modbus address 40001
@@ -219,32 +272,7 @@ void app_main(void)
 
     ESP_LOGI(TAG, "Modbus TCP slave started on port %d", MB_PORT);
 
-    while (1) {
-        int16_t raw_dp = 0;
-        int16_t raw_temp = 0;
-
-        esp_err_t err = sdp_read_measurement(&raw_dp, &raw_temp);
-
-        if (err == ESP_OK) {
-            holding_regs[0] = raw_dp / 60;
-            holding_regs[1] = raw_temp / 200;
-            ESP_LOGI(TAG, "DP = %d Pa, T = %d °C (raw dp=%d, temp=%d)",
-                     holding_regs[0], holding_regs[1], raw_dp, raw_temp);
-
-            char pressure[16];
-            char temperature[16];
-            snprintf(pressure, sizeof(pressure), "%d", holding_regs[0]);
-            snprintf(temperature, sizeof(temperature), "%d", holding_regs[1]);
-
-            // Publish to Home Assistant topics
-            esp_mqtt_client_publish(client, FILTER_PRESSURE_DIFF, pressure, 0, 1, 0);
-            esp_mqtt_client_publish(client, FILTER_AREA_AIR_TEMPERATURE, temperature, 0, 1, 0);
-        } else if (err == ESP_ERR_INVALID_CRC) {
-            ESP_LOGW(TAG, "CRC error");
-        } else {
-            ESP_LOGE(TAG, "I2C read error: %s", esp_err_to_name(err));
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(2000));
-    }
+    //Create tasks with different priorities
+    xTaskCreate(sensor_mqtt_task, "sensor_mqtt_task", 4096, NULL, 4, NULL);
+    xTaskCreate(modbus_task, "modbus_task", 4096, NULL, 6, NULL);  // Higher priority for Modbus
 }
