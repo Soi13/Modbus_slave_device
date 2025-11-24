@@ -175,9 +175,7 @@ void sensor_mqtt_task(void *arg)
         esp_err_t err = sdp_read_measurement(&raw_dp, &raw_temp);
 
         if (err == ESP_OK) {
-            ESP_LOGI(TAG, "DP = %d Pa, T = %d °C (raw dp=%d, temp=%d)",
-                     raw_dp / 60, raw_temp / 200, raw_dp, raw_temp);
-
+            //ESP_LOGI(TAG, "DP = %d Pa, T = %d °C (raw dp=%d, temp=%d)", raw_dp / 60, raw_temp / 200, raw_dp, raw_temp);
             char pressure[16];
             char temperature[16];
             snprintf(pressure, sizeof(pressure), "%d", raw_dp / 60);
@@ -207,8 +205,7 @@ void modbus_task(void *arg)
         if (err == ESP_OK) {
             holding_regs[0] = mb_raw_dp / 60;
             holding_regs[1] = mb_raw_temp / 200;
-            ESP_LOGI(TAG, "DP = %d Pa, T = %d °C (raw dp=%d, temp=%d)",
-                     mb_raw_dp / 60, mb_raw_temp / 200, mb_raw_dp, mb_raw_temp);
+            //ESP_LOGI(TAG, "DP = %d Pa, T = %d °C (raw dp=%d, temp=%d)", mb_raw_dp / 60, mb_raw_temp / 200, mb_raw_dp, mb_raw_temp);
         } else if (err == ESP_ERR_INVALID_CRC) {
             ESP_LOGW(TAG, "CRC error");
         } else {
