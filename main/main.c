@@ -270,6 +270,6 @@ void app_main(void)
     ESP_LOGI(TAG, "Modbus TCP slave started on port %d", MB_PORT);
 
     //Create tasks with different priorities
-    xTaskCreate(sensor_mqtt_task, "sensor_mqtt_task", 4096, NULL, 4, NULL);
-    xTaskCreate(modbus_task, "modbus_task", 4096, NULL, 6, NULL);  // Higher priority for Modbus
+    xTaskCreatePinnedToCore(sensor_mqtt_task, "sensor_mqtt_task", 4096, NULL, 4, NULL, 0); // Pin to core 0
+    xTaskCreatePinnedToCore(modbus_task, "modbus_task", 4096, NULL, 6, NULL, 1);  // Higher priority for Modbus and pin to core 1
 }
