@@ -28,6 +28,8 @@ You can test Modbus functionality using <b>Modpoll</b> or any Modbus TCP client.
 
 <hr><br/>
 
+<img alt="Picture of schema1" src="pictures/photo_2025-11-29_19-48-10.jpg" width="300" height="400"> <img alt="Picture of schema1" src="pictures/photo_2025-11-29_19-48-15.jpg" width="300" height="400">
+
 <h2>🛠 Features</h2>
 <h3>✅ Differential Pressure Monitoring</h3>
 <ul>
@@ -135,12 +137,16 @@ Modbus controllers poll the registers over TCP.<br/>
 
 <h3>3. MQTT Publishing</h3>
 Pressure value is formatted as a string and sent to the MQTT broker.<br/>
-Compatible with Home Assistant auto-discovery.<hr><br/>
+Compatible with Home Assistant auto-discovery.
+<img alt="Picture of schema1" src="pictures/Screenshot_2025-11-29_14-26-33.png" width="400" height="500">
+<hr><br/>
 
 <h2>🧪 Testing Modbus with Modpoll</h2>
 Example command:<br/><br/>
 <code>modpoll -m tcp -t 4:int -r 1 -c 2 192.168.x.x</code><br/><br/>
-This reads registers 40001–40002 from the ESP32.<hr><br/>
+This reads registers 40001–40002 from the ESP32.
+<img alt="Picture of schema1" src="pictures/Screenshot_2025-11-29_14-26-17.png" width="500" height="600">
+<hr><br/>
 
 <h2>▶️ How It Works in HVAC Systems</h2>
 <ol>
