@@ -138,7 +138,7 @@ Modbus controllers poll the registers over TCP.<br/>
 <h3>3. MQTT Publishing</h3>
 Pressure value is formatted as a string and sent to the MQTT broker.<br/>
 Compatible with Home Assistant auto-discovery.
-<img alt="Picture of schema1" src="pictures/Screenshot_2025-11-29_14-26-33.png" width="400" height="500">
+<img alt="Picture of schema1" src="pictures/Screenshot_2025-11-29_14-26-33.png" width="400" height="500"><img alt="Picture of schema2" src="pictures/Screenshot_2025-11-29_21-59-35.png">
 <hr><br/>
 
 <h2>🧪 Testing Modbus with Modpoll</h2>
